@@ -3,6 +3,7 @@ package com.ao3.app.webview
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.Dialog
+import android.content.ComponentCallbacks2
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.res.Configuration
@@ -70,6 +71,24 @@ class WebViewManager(private val viewModel: WebViewModel) {
 
     fun flushCookies() {
         CookieManager.getInstance().flush()
+    }
+
+    fun pauseAll() {
+        activeWebViews.toList().forEach { it.onPause() }
+    }
+
+    fun resumeAll() {
+        activeWebViews.toList().forEach { it.onResume() }
+    }
+
+    fun onTrimMemory(level: Int) {
+        if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL) {
+            activeDialogs.toList().forEach { dialog -> dialog.dismiss() }
+        }
+        if (level >= ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+            @Suppress("DEPRECATION")
+            activeWebViews.toList().forEach { webView -> webView.freeMemory() }
+        }
     }
 
     fun destroyAll() {

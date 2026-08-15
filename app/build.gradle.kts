@@ -12,8 +12,8 @@ android {
         applicationId = "com.ao3.app"
         minSdk = 26
         targetSdk = 37
-        versionCode = 6
-        versionName = "1.2.3"
+        versionCode = 8
+        versionName = "1.2.4"
     }
 
     buildTypes {

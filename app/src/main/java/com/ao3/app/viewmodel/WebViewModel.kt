@@ -103,6 +103,15 @@ class WebViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onAppPause() {
         webViewManager.flushCookies()
+        webViewManager.pauseAll()
+    }
+
+    fun onAppResume() {
+        webViewManager.resumeAll()
+    }
+
+    fun onTrimMemory(level: Int) {
+        webViewManager.onTrimMemory(level)
     }
 
     fun onPageStarted(url: String?) {

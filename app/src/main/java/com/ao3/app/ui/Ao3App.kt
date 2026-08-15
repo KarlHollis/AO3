@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import com.ao3.app.BuildConfig
+import com.ao3.app.data.ChangelogStore
 import com.ao3.app.data.LaunchDialogStore
 import com.ao3.app.ui.components.AboutDialog
 import com.ao3.app.ui.web.WebViewScreen
@@ -17,15 +18,23 @@ import com.ao3.app.viewmodel.WebViewModel
 fun Ao3App(viewModel: WebViewModel) {
     val context = LocalContext.current
     val launchDialogStore = remember { LaunchDialogStore(context) }
+    val changelogStore = remember { ChangelogStore(context) }
     var showAboutDialog by remember {
-        mutableStateOf(launchDialogStore.shouldShow())
+        mutableStateOf(
+            changelogStore.shouldShow(BuildConfig.VERSION_NAME) || launchDialogStore.shouldShow(),
+        )
     }
 
     if (showAboutDialog) {
         AboutDialog(
             versionName = BuildConfig.VERSION_NAME,
-            onDismiss = { showAboutDialog = false },
+            changelogItems = CHANGELOG_ITEMS,
+            onDismiss = {
+                changelogStore.markSeen(BuildConfig.VERSION_NAME)
+                showAboutDialog = false
+            },
             onConfirm = { dontShowAgain ->
+                changelogStore.markSeen(BuildConfig.VERSION_NAME)
                 launchDialogStore.setSuppressed(dontShowAgain)
                 showAboutDialog = false
             },
@@ -45,3 +54,9 @@ fun Ao3App(viewModel: WebViewModel) {
         },
     )
 }
+
+private val CHANGELOG_ITEMS = listOf(
+    "内存优化：低内存时自动释放 WebView 内存并关闭弹窗",
+    "App 进入后台暂停 WebView 渲染，回到前台自动恢复",
+    "关于与更新说明合并为一个弹窗",
+)

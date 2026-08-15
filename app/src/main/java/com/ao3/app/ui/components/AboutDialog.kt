@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun AboutDialog(
     versionName: String,
+    changelogItems: List<String>,
     onDismiss: () -> Unit,
     onConfirm: (dontShowAgain: Boolean) -> Unit,
 ) {
@@ -53,8 +54,23 @@ fun AboutDialog(
                     textAlign = TextAlign.Center,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 12.dp, bottom = 4.dp),
+                        .padding(top = 8.dp, bottom = 8.dp),
                 )
+                if (changelogItems.isNotEmpty()) {
+                    Text(
+                        text = "更新说明",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 2.dp),
+                    )
+                    changelogItems.forEach { item ->
+                        Text(
+                            text = "• $item",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(vertical = 1.dp),
+                        )
+                    }
+                }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier

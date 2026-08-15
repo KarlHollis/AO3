@@ -77,6 +77,16 @@ class MainActivity : ComponentActivity() {
         webViewModel.onAppPause()
     }
 
+    override fun onResume() {
+        super.onResume()
+        webViewModel.onAppResume()
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        webViewModel.onTrimMemory(level)
+    }
+
     override fun onDestroy() {
         unregisterReceiver(downloadCompleteReceiver)
         super.onDestroy()

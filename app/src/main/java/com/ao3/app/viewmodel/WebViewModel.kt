@@ -12,10 +12,13 @@ import androidx.lifecycle.viewModelScope
 import com.ao3.app.data.RecentPage
 import com.ao3.app.data.RecentPagesStore
 import com.ao3.app.data.TranslationPreferences
+import com.ao3.app.translation.LlmBatchTranslator
 import com.ao3.app.translation.MlKitTranslator
 import com.ao3.app.translation.TranslationJsBridge
+import com.ao3.app.translation.TranslationEngine
 import com.ao3.app.translation.TranslationScript
 import com.ao3.app.translation.Translator
+import com.ao3.app.translation.YoudaoTranslator
 import com.ao3.app.webview.DownloadManagerHelper
 import com.ao3.app.webview.WebViewManager
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -51,11 +54,23 @@ data class TranslationUiState(
     val isFullyTranslated: Boolean = false,
 )
 
+data class TranslationApiKeys(
+    val deepseekApiKey: String = "",
+    val qwenApiKey: String = "",
+    val youdaoAppKey: String = "",
+    val youdaoAppSecret: String = "",
+)
+
 class WebViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {
         const val HOME_URL = "https://archiveofourown.org"
         const val SEARCH_URL = "https://archiveofourown.org/works/search"
+        private const val DEEPSEEK_ENDPOINT = "https://api.deepseek.com/chat/completions"
+        private const val DEEPSEEK_MODEL = "deepseek-chat"
+        private const val QWEN_ENDPOINT =
+            "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+        private const val QWEN_MODEL = "qwen-plus"
     }
 
     private val _uiState = MutableStateFlow(WebUiState())
@@ -80,20 +95,23 @@ class WebViewModel(application: Application) : AndroidViewModel(application) {
     private val _autoTranslate = MutableStateFlow(false)
     val autoTranslate: StateFlow<Boolean> = _autoTranslate.asStateFlow()
 
-    private val translator: Translator = MlKitTranslator(getApplication())
     private val translationPreferences = TranslationPreferences(getApplication())
+    private var translator: Translator = buildTranslator(translationPreferences)
+
+    private val _translationEngine = MutableStateFlow(translationPreferences.translationEngine)
+    val translationEngine: StateFlow<TranslationEngine> = _translationEngine.asStateFlow()
 
     private var webView: WebView? = null
+    private var translationJsBridge: TranslationJsBridge? = null
     private var translationStartedUrl: String? = null
     private val webViewManager = WebViewManager(this)
 
     fun createMainWebView(context: Context): WebView {
         _autoTranslate.value = translationPreferences.autoTranslateEnabled
         val webView = webViewManager.createMainWebView(context)
-        webView.addJavascriptInterface(
-            TranslationJsBridge(webView, translator, viewModelScope, this),
-            TranslationScript.BRIDGE_NAME,
-        )
+        val bridge = TranslationJsBridge(webView, translator, viewModelScope, this)
+        translationJsBridge = bridge
+        webView.addJavascriptInterface(bridge, TranslationScript.BRIDGE_NAME)
         this.webView = webView
         if (webView.url.isNullOrBlank()) {
             webView.loadUrl(_uiState.value.url.ifBlank { HOME_URL })
@@ -297,6 +315,43 @@ class WebViewModel(application: Application) : AndroidViewModel(application) {
         setAutoTranslate(!_autoTranslate.value)
     }
 
+    fun currentTranslationApiKeys(): TranslationApiKeys = TranslationApiKeys(
+        deepseekApiKey = translationPreferences.deepseekApiKey,
+        qwenApiKey = translationPreferences.qwenApiKey,
+        youdaoAppKey = translationPreferences.youdaoAppKey,
+        youdaoAppSecret = translationPreferences.youdaoAppSecret,
+    )
+
+    fun saveTranslationSettings(
+        engine: TranslationEngine,
+        keys: TranslationApiKeys,
+    ): Boolean {
+        val requiredKey = when (engine) {
+            TranslationEngine.ML_KIT -> null
+            TranslationEngine.DEEPSEEK -> keys.deepseekApiKey
+            TranslationEngine.QWEN -> keys.qwenApiKey
+            TranslationEngine.YOUDAO -> keys.youdaoAppKey
+        }
+        if (engine != TranslationEngine.ML_KIT && requiredKey.isNullOrBlank()) {
+            showMessage("请先填写对应引擎的 API Key")
+            return false
+        }
+        if (engine == TranslationEngine.YOUDAO && keys.youdaoAppSecret.isBlank()) {
+            showMessage("请填写有道 AppSecret")
+            return false
+        }
+        translationPreferences.translationEngine = engine
+        translationPreferences.deepseekApiKey = keys.deepseekApiKey.trim()
+        translationPreferences.qwenApiKey = keys.qwenApiKey.trim()
+        translationPreferences.youdaoAppKey = keys.youdaoAppKey.trim()
+        translationPreferences.youdaoAppSecret = keys.youdaoAppSecret.trim()
+        _translationEngine.value = engine
+        translator = buildTranslator(translationPreferences)
+        translationJsBridge?.updateTranslator(translator)
+        showMessage("翻译引擎已切换：${engine.displayName}")
+        return true
+    }
+
     fun onTranslationError() {
         translationStartedUrl = null
         _translationState.value = TranslationUiState()
@@ -343,4 +398,23 @@ class WebViewModel(application: Application) : AndroidViewModel(application) {
         webViewManager.destroyAll()
         webView = null
     }
+
+    private fun buildTranslator(preferences: TranslationPreferences): Translator =
+        when (preferences.translationEngine) {
+            TranslationEngine.ML_KIT -> MlKitTranslator(getApplication())
+            TranslationEngine.DEEPSEEK -> LlmBatchTranslator(
+                endpoint = DEEPSEEK_ENDPOINT,
+                apiKey = preferences.deepseekApiKey,
+                model = DEEPSEEK_MODEL,
+            )
+            TranslationEngine.QWEN -> LlmBatchTranslator(
+                endpoint = QWEN_ENDPOINT,
+                apiKey = preferences.qwenApiKey,
+                model = QWEN_MODEL,
+            )
+            TranslationEngine.YOUDAO -> YoudaoTranslator(
+                appKey = preferences.youdaoAppKey,
+                appSecret = preferences.youdaoAppSecret,
+            )
+        }
 }

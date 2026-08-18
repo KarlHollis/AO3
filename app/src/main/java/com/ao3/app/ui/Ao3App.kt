@@ -56,7 +56,6 @@ fun Ao3App(viewModel: WebViewModel) {
 }
 
 private val CHANGELOG_ITEMS = listOf(
-    "内存优化：低内存时自动释放 WebView 内存并关闭弹窗",
-    "App 进入后台暂停 WebView 渲染，回到前台自动恢复",
-    "关于与更新说明合并为一个弹窗",
+    "新增翻译引擎设置：DeepSeek / 千问 / 有道翻译（API Key 自填）",
+    "保留离线翻译（ML Kit）作为备选",
 )

@@ -18,6 +18,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.style.TextOverflow
+import com.ao3.app.translation.TranslationEngine
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,9 +27,11 @@ fun Ao3TopBar(
     isTranslating: Boolean,
     isTranslated: Boolean,
     autoTranslate: Boolean,
+    translationEngine: TranslationEngine,
     onTranslate: () -> Unit,
     onRestoreOriginal: () -> Unit,
     onToggleAutoTranslate: () -> Unit,
+    onOpenTranslationSettings: () -> Unit,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
 
@@ -88,6 +91,19 @@ fun Ao3TopBar(
                         onClick = {
                             menuExpanded = false
                             onToggleAutoTranslate()
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("翻译引擎设置") },
+                        trailingIcon = {
+                            Text(
+                                text = translationEngine.displayName,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        },
+                        onClick = {
+                            menuExpanded = false
+                            onOpenTranslationSettings()
                         },
                     )
                 }

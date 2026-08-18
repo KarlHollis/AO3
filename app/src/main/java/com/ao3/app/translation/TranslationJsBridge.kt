@@ -15,10 +15,17 @@ import org.json.JSONObject
  */
 class TranslationJsBridge(
     private val webView: WebView,
-    private val translator: Translator,
+    translator: Translator,
     private val scope: CoroutineScope,
     private val viewModel: WebViewModel,
 ) {
+
+    @Volatile
+    private var translator: Translator = translator
+
+    fun updateTranslator(translator: Translator) {
+        this.translator = translator
+    }
 
     @JavascriptInterface
     fun translateBatch(batchJson: String) {

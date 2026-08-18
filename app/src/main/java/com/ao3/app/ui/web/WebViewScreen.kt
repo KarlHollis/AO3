@@ -33,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ao3.app.ui.components.Ao3BottomBar
 import com.ao3.app.ui.components.Ao3TopBar
 import com.ao3.app.ui.components.RecentPagesDialog
+import com.ao3.app.ui.components.TranslationSettingsDialog
 import com.ao3.app.viewmodel.WebViewModel
 
 @Composable
@@ -46,8 +47,10 @@ fun WebViewScreen(
     val recentPages by viewModel.recentPages.collectAsStateWithLifecycle()
     val translationState by viewModel.translationState.collectAsStateWithLifecycle()
     val autoTranslate by viewModel.autoTranslate.collectAsStateWithLifecycle()
+    val translationEngine by viewModel.translationEngine.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var showRecentPages by remember { mutableStateOf(false) }
+    var showTranslationSettings by remember { mutableStateOf(false) }
 
     LaunchedEffect(message) {
         val text = message ?: return@LaunchedEffect
@@ -66,9 +69,11 @@ fun WebViewScreen(
                 isTranslating = translationState.isTranslating,
                 isTranslated = translationState.isTranslated,
                 autoTranslate = autoTranslate,
+                translationEngine = translationEngine,
                 onTranslate = { viewModel.translatePage() },
                 onRestoreOriginal = viewModel::restoreOriginal,
                 onToggleAutoTranslate = viewModel::toggleAutoTranslate,
+                onOpenTranslationSettings = { showTranslationSettings = true },
             )
         },
         bottomBar = {
@@ -125,6 +130,15 @@ fun WebViewScreen(
             },
             onClear = viewModel::clearRecentPages,
             onDismiss = { showRecentPages = false },
+        )
+    }
+
+    if (showTranslationSettings) {
+        TranslationSettingsDialog(
+            initialEngine = translationEngine,
+            initialKeys = remember { viewModel.currentTranslationApiKeys() },
+            onSave = viewModel::saveTranslationSettings,
+            onDismiss = { showTranslationSettings = false },
         )
     }
 }

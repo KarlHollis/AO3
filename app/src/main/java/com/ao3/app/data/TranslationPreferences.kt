@@ -36,6 +36,20 @@ class TranslationPreferences(context: Context) {
             prefs.edit().putString(KEY_QWEN_API_KEY, value).apply()
         }
 
+    var deepseekModel: String
+        get() = prefs.getString(KEY_DEEPSEEK_MODEL, DEEPSEEK_DEFAULT_MODEL)
+            ?: DEEPSEEK_DEFAULT_MODEL
+        set(value) {
+            prefs.edit().putString(KEY_DEEPSEEK_MODEL, value).apply()
+        }
+
+    var qwenModel: String
+        get() = prefs.getString(KEY_QWEN_MODEL, QWEN_DEFAULT_MODEL)
+            ?: QWEN_DEFAULT_MODEL
+        set(value) {
+            prefs.edit().putString(KEY_QWEN_MODEL, value).apply()
+        }
+
     var youdaoAppKey: String
         get() = prefs.getString(KEY_YOUDAO_APP_KEY, "").orEmpty()
         set(value) {
@@ -56,5 +70,10 @@ class TranslationPreferences(context: Context) {
         private const val KEY_QWEN_API_KEY = "qwen_api_key"
         private const val KEY_YOUDAO_APP_KEY = "youdao_app_key"
         private const val KEY_YOUDAO_APP_SECRET = "youdao_app_secret"
+        private const val KEY_DEEPSEEK_MODEL = "deepseek_model"
+        private const val KEY_QWEN_MODEL = "qwen_model"
+
+        const val DEEPSEEK_DEFAULT_MODEL = "deepseek-v4-flash"
+        const val QWEN_DEFAULT_MODEL = "qwen-plus"
     }
 }

@@ -137,6 +137,8 @@ fun WebViewScreen(
         TranslationSettingsDialog(
             initialEngine = translationEngine,
             initialKeys = remember { viewModel.currentTranslationApiKeys() },
+            initialDeepseekModel = remember { viewModel.currentDeepseekModel() },
+            initialQwenModel = remember { viewModel.currentQwenModel() },
             onSave = viewModel::saveTranslationSettings,
             onDismiss = { showTranslationSettings = false },
         )

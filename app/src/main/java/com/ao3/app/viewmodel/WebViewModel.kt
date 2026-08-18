@@ -67,10 +67,8 @@ class WebViewModel(application: Application) : AndroidViewModel(application) {
         const val HOME_URL = "https://archiveofourown.org"
         const val SEARCH_URL = "https://archiveofourown.org/works/search"
         private const val DEEPSEEK_ENDPOINT = "https://api.deepseek.com/chat/completions"
-        private const val DEEPSEEK_MODEL = "deepseek-chat"
         private const val QWEN_ENDPOINT =
             "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
-        private const val QWEN_MODEL = "qwen-plus"
     }
 
     private val _uiState = MutableStateFlow(WebUiState())
@@ -322,9 +320,15 @@ class WebViewModel(application: Application) : AndroidViewModel(application) {
         youdaoAppSecret = translationPreferences.youdaoAppSecret,
     )
 
+    fun currentDeepseekModel(): String = translationPreferences.deepseekModel
+
+    fun currentQwenModel(): String = translationPreferences.qwenModel
+
     fun saveTranslationSettings(
         engine: TranslationEngine,
         keys: TranslationApiKeys,
+        deepseekModel: String,
+        qwenModel: String,
     ): Boolean {
         val requiredKey = when (engine) {
             TranslationEngine.ML_KIT -> null
@@ -345,6 +349,12 @@ class WebViewModel(application: Application) : AndroidViewModel(application) {
         translationPreferences.qwenApiKey = keys.qwenApiKey.trim()
         translationPreferences.youdaoAppKey = keys.youdaoAppKey.trim()
         translationPreferences.youdaoAppSecret = keys.youdaoAppSecret.trim()
+        translationPreferences.deepseekModel = deepseekModel.ifBlank {
+            TranslationPreferences.DEEPSEEK_DEFAULT_MODEL
+        }
+        translationPreferences.qwenModel = qwenModel.ifBlank {
+            TranslationPreferences.QWEN_DEFAULT_MODEL
+        }
         _translationEngine.value = engine
         translator = buildTranslator(translationPreferences)
         translationJsBridge?.updateTranslator(translator)
@@ -405,12 +415,12 @@ class WebViewModel(application: Application) : AndroidViewModel(application) {
             TranslationEngine.DEEPSEEK -> LlmBatchTranslator(
                 endpoint = DEEPSEEK_ENDPOINT,
                 apiKey = preferences.deepseekApiKey,
-                model = DEEPSEEK_MODEL,
+                model = preferences.deepseekModel,
             )
             TranslationEngine.QWEN -> LlmBatchTranslator(
                 endpoint = QWEN_ENDPOINT,
                 apiKey = preferences.qwenApiKey,
-                model = QWEN_MODEL,
+                model = preferences.qwenModel,
             )
             TranslationEngine.YOUDAO -> YoudaoTranslator(
                 appKey = preferences.youdaoAppKey,

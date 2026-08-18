@@ -31,7 +31,9 @@ import com.ao3.app.viewmodel.TranslationApiKeys
 fun TranslationSettingsDialog(
     initialEngine: TranslationEngine,
     initialKeys: TranslationApiKeys,
-    onSave: (TranslationEngine, TranslationApiKeys) -> Boolean,
+    initialDeepseekModel: String,
+    initialQwenModel: String,
+    onSave: (TranslationEngine, TranslationApiKeys, String, String) -> Boolean,
     onDismiss: () -> Unit,
 ) {
     var engine by remember { mutableStateOf(initialEngine) }
@@ -39,6 +41,8 @@ fun TranslationSettingsDialog(
     var qwenKey by remember { mutableStateOf(initialKeys.qwenApiKey) }
     var youdaoAppKey by remember { mutableStateOf(initialKeys.youdaoAppKey) }
     var youdaoAppSecret by remember { mutableStateOf(initialKeys.youdaoAppSecret) }
+    var deepseekModel by remember { mutableStateOf(initialDeepseekModel) }
+    var qwenModel by remember { mutableStateOf(initialQwenModel) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -93,6 +97,15 @@ fun TranslationSettingsDialog(
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                         )
+                        ModelOptions(
+                            label = "选择模型",
+                            options = listOf(
+                                "deepseek-v4-flash（推荐，快速便宜）" to "deepseek-v4-flash",
+                                "deepseek-v4-pro（质量更高，更慢）" to "deepseek-v4-pro",
+                            ),
+                            selected = deepseekModel,
+                            onSelect = { deepseekModel = it },
+                        )
                     }
                     TranslationEngine.QWEN -> {
                         HintText("千问 API Key（阿里云百炼控制台获取）")
@@ -101,6 +114,16 @@ fun TranslationSettingsDialog(
                             onValueChange = { qwenKey = it },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
+                        )
+                        ModelOptions(
+                            label = "选择模型",
+                            options = listOf(
+                                "qwen-plus（推荐，均衡）" to "qwen-plus",
+                                "qwen-turbo（快速便宜）" to "qwen-turbo",
+                                "qwen-max（质量最高）" to "qwen-max",
+                            ),
+                            selected = qwenModel,
+                            onSelect = { qwenModel = it },
                         )
                     }
                     TranslationEngine.YOUDAO -> {
@@ -127,12 +150,17 @@ fun TranslationSettingsDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    if (onSave(engine, TranslationApiKeys(
+                    if (onSave(
+                            engine,
+                            TranslationApiKeys(
                             deepseekApiKey = deepseekKey,
                             qwenApiKey = qwenKey,
                             youdaoAppKey = youdaoAppKey,
                             youdaoAppSecret = youdaoAppSecret,
-                        ))
+                            ),
+                            deepseekModel,
+                            qwenModel,
+                        )
                     ) {
                         onDismiss()
                     }
@@ -157,4 +185,35 @@ private fun HintText(text: String) {
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(bottom = 4.dp),
     )
+}
+
+@Composable
+private fun ModelOptions(
+    label: String,
+    options: List<Pair<String, String>>,
+    selected: String,
+    onSelect: (String) -> Unit,
+) {
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelLarge,
+        modifier = Modifier.padding(top = 8.dp),
+    )
+    options.forEach { (display, value) ->
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onSelect(value) },
+        ) {
+            RadioButton(
+                selected = selected == value,
+                onClick = { onSelect(value) },
+            )
+            Text(
+                text = display,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+    }
 }
